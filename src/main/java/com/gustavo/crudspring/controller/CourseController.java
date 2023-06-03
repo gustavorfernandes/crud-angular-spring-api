@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,12 +27,12 @@ public class CourseController {
   private final CourseRepository courseRepository;
 
   @GetMapping
-  public List<Course> list() {
+  public List<Course> findAll() {
     return courseRepository.findAll();
   }
 
   @GetMapping("/{id}")
-  public ResponseEntity<Course> registry(@PathVariable Long id) {
+  public ResponseEntity<Course> findOneById(@PathVariable Long id) {
     return courseRepository.findById(id)
         .map(foundedData -> ResponseEntity.ok().body(foundedData))
         .orElse(ResponseEntity.notFound().build());
@@ -51,6 +52,16 @@ public class CourseController {
           foundedData.setCategory(registry.getCategory());
           Course updatedRegistry = courseRepository.save(foundedData);
           return ResponseEntity.ok().body(updatedRegistry);
+        })
+        .orElse(ResponseEntity.notFound().build());
+  }
+
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> delete(@PathVariable Long id) {
+    return courseRepository.findById(id)
+        .map(foundedData -> {
+          courseRepository.deleteById(id);
+          return ResponseEntity.noContent().<Void>build();
         })
         .orElse(ResponseEntity.notFound().build());
   }
