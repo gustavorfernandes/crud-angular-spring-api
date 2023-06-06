@@ -16,30 +16,31 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gustavo.crudspring.model.Course;
-import com.gustavo.crudspring.repository.CourseRepository;
+import com.gustavo.crudspring.service.CourseService;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.Valid;
 
-import lombok.AllArgsConstructor;
-
 @Validated
 @RestController
 @RequestMapping("/api/courses")
-@AllArgsConstructor
 public class CourseController {
 
-  private final CourseRepository courseRepository;
+  private final CourseService courseService;
+
+  public CourseController(CourseService courseService) {
+    this.courseService = courseService;
+  }
 
   @GetMapping
   public List<Course> findAll() {
-    return courseRepository.findAll();
+    return courseService.findAll();
   }
 
   @GetMapping("/{id}")
   public ResponseEntity<Course> findOneById(@PathVariable @NotNull @Positive Long id) {
-    return courseRepository.findById(id)
+    return courseService.findOneById(id)
         .map(foundedData -> ResponseEntity.ok().body(foundedData))
         .orElse(ResponseEntity.notFound().build());
   }
@@ -47,28 +48,21 @@ public class CourseController {
   @PostMapping
   @ResponseStatus(code = HttpStatus.CREATED)
   public Course create(@RequestBody @Valid Course registry) {
-    return courseRepository.save(registry);
+    return courseService.create(registry);
   }
 
   @PutMapping("/{id}")
   public ResponseEntity<Course> update(@PathVariable @NotNull @Positive Long id, @RequestBody @Valid Course registry) {
-    return courseRepository.findById(id)
-        .map(foundedData -> {
-          foundedData.setName(registry.getName());
-          foundedData.setCategory(registry.getCategory());
-          Course updatedRegistry = courseRepository.save(foundedData);
-          return ResponseEntity.ok().body(updatedRegistry);
-        })
+    return courseService.update(id, registry)
+        .map(foundedData -> ResponseEntity.ok().body(foundedData))
         .orElse(ResponseEntity.notFound().build());
   }
 
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> delete(@PathVariable @NotNull @Positive Long id) {
-    return courseRepository.findById(id)
-        .map(foundedData -> {
-          courseRepository.deleteById(id);
-          return ResponseEntity.noContent().<Void>build();
-        })
-        .orElse(ResponseEntity.notFound().build());
+    if (courseService.delete(id)) {
+      return ResponseEntity.noContent().<Void>build();
+    }
+    return ResponseEntity.notFound().build();
   }
 }
